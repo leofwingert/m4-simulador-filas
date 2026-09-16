@@ -194,22 +194,22 @@ def tratar_chegada(evento, escalonador, filas, routing):
     idx  = evento.fila_destino
     fila = filas[idx]
 
-    # Agenda próxima chegada (consome um aleatório)
+    # Tenta inserir na fila
+    if not fila.esta_cheia():
+        fila.in_()
+        if fila.estado <= fila.servidores:
+            # Servidor livre → inicia atendimento (consome aleatório p/ atendimento)
+            agendar_saida_ou_passagem(escalonador, filas, routing, idx, evento.tempo)
+    else:
+        fila.perdas += 1
+
+    # Agenda próxima chegada (consome aleatório p/ entre-chegadas)
     if count > 0 and fila.tem_chegada_externa():
         tempo_prox = evento.tempo + uniform(fila.chegada_min, fila.chegada_max)
         escalonador.adicionar(Evento(
             Evento.CHEGADA, tempo_prox,
             fila_destino=idx
         ))
-
-    # Tenta inserir na fila
-    if not fila.esta_cheia():
-        fila.in_()
-        if fila.estado <= fila.servidores:
-            # Servidor livre → inicia atendimento
-            agendar_saida_ou_passagem(escalonador, filas, routing, idx, evento.tempo)
-    else:
-        fila.perdas += 1
 
 
 def tratar_passagem(evento, escalonador, filas, routing):
